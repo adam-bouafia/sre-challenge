@@ -2,6 +2,7 @@
 added CSRFProtect
 added limit login
 added session cookie flags like httpOnly, samesite nd secure
+added healthz and readyz endpoints for k8s
 """
 
 from __future__ import annotations
@@ -20,8 +21,6 @@ from .auth import sanitize_for_log, verify_credentials
 from .config import Config
 
 csrf = CSRFProtect()
-# in-memory only works as a real global limit because gunicorn runs 1 worker.
-# more workers = more counters, each blind to the others
 limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
 
 
@@ -85,6 +84,22 @@ def _register_routes(app: Flask) -> None:
         session.clear()
         return redirect(url_for("index"))
 
+    @app.route("/healthz")
+    def healthz():
+        return {"status": "ok"}, 200
+
+    @app.route("/readyz")
+    def readyz():
+        try:
+            connection = db.get_db()
+            if not db.table_exists(connection, "users"):
+                raise RuntimeError("users table is missing")
+            connection.execute("SELECT 1").fetchone()
+        except Exception as exc:  # noqa: BLE001 - any db failure here just means not ready yet
+            app.logger.error("readiness check failed", extra={"error": str(exc)})
+            return {"status": "unavailable"}, 503
+        return {"status": "ready"}, 200
+
 
 def _is_authenticated() -> bool:
     return "username" in session
@@ -92,7 +107,9 @@ def _is_authenticated() -> bool:
 
 def _configure_logging(app: Flask, log_level: str) -> None:
     handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(jsonlogger.JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+    handler.setFormatter(
+        jsonlogger.JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
     app.logger.handlers = [handler]
     app.logger.setLevel(log_level)
     app.logger.propagate = False
