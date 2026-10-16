@@ -1,4 +1,6 @@
-"""this is the app factory, links config/db/auth/metrics into the actual routes"""
+"""this is the app factory, links config/db/auth/metrics into the actual routes
+added CSRFProtect
+"""
 
 from __future__ import annotations
 
@@ -6,11 +8,14 @@ import logging
 import sys
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask_wtf import CSRFProtect
 from pythonjsonlogger import jsonlogger
 
 from . import db, metrics
 from .auth import sanitize_for_log, verify_credentials
 from .config import Config
+
+csrf = CSRFProtect()
 
 
 def create_app(config: Config | None = None) -> Flask:
@@ -28,6 +33,7 @@ def create_app(config: Config | None = None) -> Flask:
 
     _configure_logging(app, cfg.log_level)
     db.init_app(app)
+    csrf.init_app(app)
     metrics.init_metrics(app)
     _register_routes(app)
 
