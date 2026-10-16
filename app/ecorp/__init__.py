@@ -1,5 +1,7 @@
 """this is the app factory, links config/db/auth/metrics into the actual routes
 added CSRFProtect
+added limit login
+added session cookie flags like httpOnly, samesite nd secure
 """
 
 from __future__ import annotations
@@ -8,6 +10,8 @@ import logging
 import sys
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_wtf import CSRFProtect
 from pythonjsonlogger import jsonlogger
 
@@ -16,6 +20,9 @@ from .auth import sanitize_for_log, verify_credentials
 from .config import Config
 
 csrf = CSRFProtect()
+# in-memory only works as a real global limit because gunicorn runs 1 worker.
+# more workers = more counters, each blind to the others
+limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
 
 
 def create_app(config: Config | None = None) -> Flask:
@@ -29,11 +36,15 @@ def create_app(config: Config | None = None) -> Flask:
         DATABASE_PATH=database_path,
         ADMIN_USERNAME=cfg.admin_username,
         ADMIN_PASSWORD=cfg.admin_password,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=cfg.session_cookie_secure,
     )
 
     _configure_logging(app, cfg.log_level)
     db.init_app(app)
     csrf.init_app(app)
+    limiter.init_app(app)
     metrics.init_metrics(app)
     _register_routes(app)
 
@@ -46,6 +57,7 @@ def _register_routes(app: Flask) -> None:
         return render_template("index.html", is_authenticated=_is_authenticated())
 
     @app.route("/login", methods=["GET", "POST"])
+    @limiter.limit("5 per minute", methods=["POST"])
     def login():
         if request.method == "POST":
             username = request.form.get("username", "")
