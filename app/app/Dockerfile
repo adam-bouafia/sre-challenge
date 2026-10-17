@@ -28,7 +28,7 @@ ENV FLASK_APP=ecorp \
     GUNICORN_BIND=0.0.0.0:8000 \
     PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus-multiproc
 
-USER ecorp
+USER 10001:10001
 EXPOSE 8000
 
 ENTRYPOINT ["./entrypoint.sh"]
