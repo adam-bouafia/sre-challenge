@@ -10,7 +10,8 @@ import sqlite3
 from pathlib import Path
 
 import click
-from flask import Flask, current_app, g 
+from flask import Flask, current_app, g
+from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
 
 SCHEMA = """
@@ -68,8 +69,8 @@ def init_db(
     connection.commit()
 
 
-@click.command("init-db") 
-
+@click.command("init-db")
+@with_appcontext
 def init_db_command() -> None:
     """Create the schema and seed/update the admin user from env vars."""
     admin_password = current_app.config.get("ADMIN_PASSWORD")
