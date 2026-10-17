@@ -64,7 +64,7 @@ def _register_routes(app: Flask) -> None:
             if verify_credentials(db.get_db(), username, password):
                 session.clear()
                 session["username"] = username
-                metrics.record_login_attempt("success")
+                metrics.record_login_attempt(app, "success")
                 app.logger.info(
                     "login attempt",
                     extra={
@@ -74,7 +74,7 @@ def _register_routes(app: Flask) -> None:
                 )
                 return redirect(url_for("index"))
 
-            metrics.record_login_attempt("failure")
+            metrics.record_login_attempt(app, "failure")
             app.logger.warning(
                 "login attempt",
                 extra={"username": sanitize_for_log(username), "outcome": "failure"},

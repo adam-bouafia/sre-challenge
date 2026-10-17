@@ -75,13 +75,24 @@
           </div>
           <div class="col-4 d-flex justify-content-end align-items-center">
             {% if is_authenticated %}
-            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('logout') }}">Logout</a>
+            <form method="post" action="{{ url_for('logout') }}" class="m-0">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-secondary">Logout</button>
+            </form>
             {% else %}
             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('login') }}">Login</a>
             {% endif %}
           </div>
         </div>
       </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else 'info' }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
     </div>
 
     {% block content %}{% endblock %}
