@@ -67,7 +67,10 @@ def _register_routes(app: Flask) -> None:
                 metrics.record_login_attempt("success")
                 app.logger.info(
                     "login attempt",
-                    extra={"username": sanitize_for_log(username), "outcome": "success"},
+                    extra={
+                        "username": sanitize_for_log(username),
+                        "outcome": "success",
+                    },
                 )
                 return redirect(url_for("index"))
 

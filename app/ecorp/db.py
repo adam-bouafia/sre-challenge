@@ -1,6 +1,6 @@
 """db schema, connection handling, and the init-db cli command.
 
-no more plaintext pswd or relative db path, schema
+no more plaintext password file (F2), no more relative db path (F5) - schema
 and admin user get created at deploy time now via `flask init-db`
 """
 
@@ -10,7 +10,7 @@ import sqlite3
 from pathlib import Path
 
 import click
-from flask import Flask, current_app, g
+from flask import Flask, current_app, g 
 from werkzeug.security import generate_password_hash
 
 SCHEMA = """
@@ -68,7 +68,8 @@ def init_db(
     connection.commit()
 
 
-@click.command("init-db")
+@click.command("init-db") 
+
 def init_db_command() -> None:
     """Create the schema and seed/update the admin user from env vars."""
     admin_password = current_app.config.get("ADMIN_PASSWORD")

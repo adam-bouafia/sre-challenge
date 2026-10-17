@@ -1,8 +1,5 @@
-mkdir -p "$(dirname "app/pyproject.toml")" 2>/dev/null
-cat > "app/pyproject.toml" << 'FILE_CONTENT_EOF'
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
 [tool.ruff]
 target-version = "py312"
-FILE_CONTENT_EOF

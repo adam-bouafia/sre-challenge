@@ -1,6 +1,5 @@
 """config from env vars now, not hardcoded. no more secret_key baked into the file"""
 
-
 from __future__ import annotations
 
 import os
