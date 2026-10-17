@@ -1,0 +1,37 @@
+---
+- name: Sync the app source to the VM
+  ansible.posix.synchronize:
+    src: "{{ ecorp_app_src }}/"
+    dest: "{{ ecorp_app_dir }}/"
+    delete: true
+    rsync_opts:
+      - "--exclude=.venv"
+      - "--exclude=__pycache__"
+      - "--exclude=*.pyc"
+      - "--exclude=tests"
+      - "--exclude=.pytest_cache"
+      - "--exclude=.coverage"
+      - "--exclude=instance"
+      - "--exclude=*.db"
+      - "--exclude=requirements.in"
+      - "--exclude=requirements-dev.in"
+      - "--exclude=requirements-dev.txt"
+      - "--rsync-path=sudo rsync"
+  become: false
+  notify: Restart ecorp
+
+- name: Fix ownership after sync (rsync writes as root via sudo)
+  ansible.builtin.file:
+    path: "{{ ecorp_app_dir }}"
+    owner: ecorp
+    group: ecorp
+    recurse: true
+
+- name: Install the app into a dedicated venv
+  ansible.builtin.pip:
+    requirements: "{{ ecorp_app_dir }}/requirements.txt"
+    virtualenv: "{{ ecorp_venv_dir }}"
+    virtualenv_command: python3.12 -m venv
+  become: true
+  become_user: ecorp
+  notify: Restart ecorp
