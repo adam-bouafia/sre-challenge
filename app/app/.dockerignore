@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+*.db
+instance/
+.env
+requirements.in
+requirements-dev.in
+requirements-dev.txt
