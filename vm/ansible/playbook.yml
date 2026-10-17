@@ -1,0 +1,6 @@
+---
+- name: Deploy E-Corp on the VM
+  hosts: all
+  become: true
+  roles:
+    - ecorp

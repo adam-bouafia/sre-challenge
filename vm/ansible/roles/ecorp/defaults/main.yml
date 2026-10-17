@@ -1,0 +1,15 @@
+---
+ecorp_app_src: "{{ playbook_dir }}/../../app"
+ecorp_app_dir: /opt/ecorp/app
+ecorp_venv_dir: /opt/ecorp/venv
+ecorp_data_dir: /var/lib/ecorp
+ecorp_config_dir: /etc/ecorp
+ecorp_env_file: "{{ ecorp_config_dir }}/ecorp.env"
+
+ecorp_admin_username: admin
+
+ecorp_tls_dir: /etc/nginx/ssl
+ecorp_tls_cert: "{{ ecorp_tls_dir }}/ecorp.crt"
+ecorp_tls_key: "{{ ecorp_tls_dir }}/ecorp.key"
+ecorp_server_name: ecorp.local
+ecorp_backend_port: 8000

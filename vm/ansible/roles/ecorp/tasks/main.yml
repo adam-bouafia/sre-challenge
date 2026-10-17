@@ -1,0 +1,21 @@
+---
+- name: Include package installation tasks
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Include app deployment tasks
+  ansible.builtin.import_tasks: app.yml
+
+- name: Include secrets tasks
+  ansible.builtin.import_tasks: secrets.yml
+
+- name: Include systemd service tasks
+  ansible.builtin.import_tasks: service.yml
+
+- name: Include SELinux tasks
+  ansible.builtin.import_tasks: selinux.yml
+
+- name: Include nginx tasks
+  ansible.builtin.import_tasks: nginx.yml
+
+- name: Include firewall tasks
+  ansible.builtin.import_tasks: firewall.yml
