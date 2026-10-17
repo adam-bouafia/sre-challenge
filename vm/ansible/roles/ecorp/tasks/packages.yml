@@ -1,0 +1,35 @@
+---
+- name: Install required packages
+  ansible.builtin.dnf:
+    name:
+      - python3.12
+      - python3.12-pip
+      - rsync
+      - nginx
+      - firewalld
+      - policycoreutils-python-utils
+      - python3-libselinux
+      - openssl
+      - sqlite
+    state: present
+    update_cache: true
+
+- name: Create the ecorp system user
+  ansible.builtin.user:
+    name: ecorp
+    system: true
+    shell: /usr/sbin/nologin
+    home: /opt/ecorp
+    create_home: true
+
+- name: Create the ecorp data and config directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ ecorp_data_dir }}", owner: ecorp, group: ecorp, mode: "0750" }
+    - { path: "{{ ecorp_config_dir }}", owner: root, group: ecorp, mode: "0750" }
+    - { path: "{{ ecorp_app_dir }}", owner: ecorp, group: ecorp, mode: "0750" }
