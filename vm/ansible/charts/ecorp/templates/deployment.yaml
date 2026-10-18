@@ -5,8 +5,6 @@ metadata:
   labels:
     {{- include "ecorp.labels" . | nindent 4 }}
 spec:
-  # Deployment basic Skelton (image, ports, env vars, volumes): https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment
-  # 
   replicas: 1
   strategy:
     type: Recreate
@@ -20,10 +18,14 @@ spec:
     spec:
       serviceAccountName: {{ include "ecorp.serviceAccountName" . }}
       automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: ecorp
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
             - name: http
               containerPort: 8000
