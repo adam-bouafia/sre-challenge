@@ -1,0 +1,22 @@
+---
+- name: Enable and start firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+# firewalld's default zone is deny-by-default already, no separate "set policy"
+# step needed like in ubuntum,we allow the two services we actually want reachable.
+- name: Allow SSH
+  ansible.posix.firewalld:
+    service: ssh
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Allow HTTPS
+  ansible.posix.firewalld:
+    service: https
+    permanent: true
+    immediate: true
+    state: enabled
