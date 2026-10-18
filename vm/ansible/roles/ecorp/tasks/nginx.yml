@@ -1,0 +1,60 @@
+---
+- name: Ensure the TLS directory exists
+  ansible.builtin.file:
+    path: "{{ ecorp_tls_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Generate a self-signed TLS certificate
+  ansible.builtin.command:
+    cmd: >
+      openssl req -x509 -nodes -days 825
+      -newkey rsa:2048
+      -keyout {{ ecorp_tls_key }}
+      -out {{ ecorp_tls_cert }}
+      -subj "/CN={{ ecorp_server_name }}"
+      -addext "subjectAltName=DNS:{{ ecorp_server_name }},DNS:localhost"
+    creates: "{{ ecorp_tls_cert }}"
+  notify: Reload nginx
+
+- name: Ensure the snippets directory exists (debian's nginx package
+    creates this by default, rhel's doesn't)
+  ansible.builtin.file:
+    path: /etc/nginx/snippets
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy the shared reverse-proxy snippet
+  ansible.builtin.template:
+    src: proxy-common.conf.j2
+    dest: /etc/nginx/snippets/proxy-common.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx
+
+# no sites-available/sites-enabled on rhel - conf.d is the native convention,
+# already included by the stock nginx.conf's `include /etc/nginx/conf.d/*.conf;`
+- name: Deploy the E-Corp nginx site
+  ansible.builtin.template:
+    src: ecorp.conf.j2
+    dest: /etc/nginx/conf.d/ecorp.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx 
+- name: Remove the default nginx site, if it ships as a separate file
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: Reload nginx
+
+- name: Enable and start nginx
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started

@@ -1,0 +1,44 @@
+{{ ansible_managed | comment }}
+limit_req_zone $binary_remote_addr zone=ecorp_login:10m rate=5r/m;
+
+server {
+    listen 80;
+    server_name {{ ecorp_server_name }};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name {{ ecorp_server_name }};
+
+    ssl_certificate     {{ ecorp_tls_cert }};
+    ssl_certificate_key {{ ecorp_tls_key }};
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "same-origin" always;
+    add_header Strict-Transport-Security "max-age=63072000" always;
+
+    # metrics stay on localhost, prometheus only, not the public internet
+    location /metrics {
+        allow 127.0.0.1;
+        deny all;
+        proxy_pass http://127.0.0.1:{{ ecorp_backend_port }};
+        include snippets/proxy-common.conf;
+    }
+
+    # 2nd layer of brute force protection on top of flask-limiter, this one
+    # at the nginx level
+    location /login {
+        limit_req zone=ecorp_login burst=5 nodelay;
+        proxy_pass http://127.0.0.1:{{ ecorp_backend_port }};
+        include snippets/proxy-common.conf;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:{{ ecorp_backend_port }};
+        include snippets/proxy-common.conf;
+    }
+}
