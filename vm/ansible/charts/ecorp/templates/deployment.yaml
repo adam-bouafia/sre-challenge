@@ -5,7 +5,6 @@ metadata:
   labels:
     {{- include "ecorp.labels" . | nindent 4 }}
 spec:
-
   replicas: 1
   strategy:
     type: Recreate
@@ -16,6 +15,8 @@ spec:
     metadata:
       labels:
         {{- include "ecorp.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "ecorp.serviceAccountName" . }}
       automountServiceAccountToken: false
