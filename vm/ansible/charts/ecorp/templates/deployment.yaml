@@ -5,6 +5,7 @@ metadata:
   labels:
     {{- include "ecorp.labels" . | nindent 4 }}
 spec:
+
   replicas: 1
   strategy:
     type: Recreate
@@ -44,6 +45,26 @@ spec:
               mountPath: /data
             - name: tmp
               mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: data
           persistentVolumeClaim:
