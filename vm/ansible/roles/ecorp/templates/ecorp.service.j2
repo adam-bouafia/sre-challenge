@@ -1,0 +1,29 @@
+{{ ansible_managed | comment("semicolon") }}
+[Unit]
+Description=E-Corp Flask application (gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=ecorp
+Group=ecorp
+WorkingDirectory={{ ecorp_app_dir }}
+EnvironmentFile={{ ecorp_env_file }}
+ExecStart={{ ecorp_venv_dir }}/bin/gunicorn -c gunicorn.conf.py "ecorp:create_app()"
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths={{ ecorp_data_dir }}
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target

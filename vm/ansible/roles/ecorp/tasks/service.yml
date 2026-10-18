@@ -1,0 +1,16 @@
+---
+- name: Install the systemd unit
+  ansible.builtin.template:
+    src: ecorp.service.j2
+    dest: /etc/systemd/system/ecorp.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart ecorp
+
+- name: Enable and start the ecorp service
+  ansible.builtin.systemd:
+    name: ecorp
+    enabled: true
+    state: started
+    daemon_reload: true
