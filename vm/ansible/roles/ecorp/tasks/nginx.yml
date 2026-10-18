@@ -46,7 +46,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Reload nginx 
+  notify: Reload nginx
 - name: Remove the default nginx site, if it ships as a separate file
   ansible.builtin.file:
     path: /etc/nginx/conf.d/default.conf

@@ -5,8 +5,9 @@
     enabled: true
     state: started
 
-# firewalld's default zone is deny-by-default already, no separate "set policy"
-# step needed like in ubuntum,we allow the two services we actually want reachable.
+# firewalld's default zone is already deny-by-default, no need for a separate
+# "set policy" step like on Ubuntu. We only allow the two services that should
+# be reachable.
 - name: Allow SSH
   ansible.posix.firewalld:
     service: ssh

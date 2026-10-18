@@ -1,10 +1,10 @@
 ---
-# rocky selinux security layer is enabled by default, and nginx and gunicorn are both confined by it.   
+# rocky selinux security layer is enabled by default, and nginx and gunicorn are both confined by it.
 # nginx's proxy_pass to gunicorn on 127.0.0.1:{{ ecorp_backend_port }} gets
 # blocked - shows up as a 502 with "(13: Permission denied)" in the nginx
 #  error log. this is because the port is not labeled as http_port_t, so nginx
 #  is not allowed to connect to it. we also need to allow nginx to relay to
-#  ports already labeled as http, otherwise the proxy_pass will still be blocked  
+#  ports already labeled as http, otherwise the proxy_pass will still be blocked
 
 - name: Label the gunicorn backend port as http_port_t so nginx can reach it
   community.general.seport:
