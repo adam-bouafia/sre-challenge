@@ -1,0 +1,13 @@
+{{- if .Values.metrics.dashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ecorp.fullname" . }}-dashboard
+  labels:
+    {{- include "ecorp.labels" . | nindent 4 }}
+    # grafana_dashboard label = kube-prometheus-stack's sidecar picks this up automatically
+    grafana_dashboard: "1"
+data:
+  ecorp.json: |
+    {{- $.Files.Get "dashboards/ecorp.json" | nindent 4 }}
+{{- end }}
