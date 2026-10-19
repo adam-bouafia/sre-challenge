@@ -164,3 +164,7 @@ cython_debug/
 vm/.vagrant/
 *.retry
 .ansible/
+
+# Helm
+charts/*/charts/
+*.tgz
