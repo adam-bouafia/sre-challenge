@@ -88,10 +88,9 @@ reasoning behind every non-obvious choice: `docs/architecture.md`.
 - **Observability:** see below.
 - **Security:** this is most of what F1-F14 are. Beyond the findings:
   non-root, read-only root filesystem, dropped capabilities, and a
-  default-deny NetworkPolicy in Kubernetes; `firewalld` plus SELinux
-  (enforcing by default on Rocky Linux) plus a hardened systemd unit
-  (`NoNewPrivileges`, `ProtectSystem=strict`, `PrivateTmp`, and more) on
-  the VM. A formal STRIDE-per-element threat model of the whole system -
+  default-deny NetworkPolicy in Kubernetes; `ufw` default-deny plus a
+  hardened systemd unit (`NoNewPrivileges`, `ProtectSystem=strict`,
+  `PrivateTmp`, and more) on the VM. A formal STRIDE-per-element threat model of the whole system -
   every element, every trust boundary, every threat with a disposition -
   is in `docs/threat-model-ecorp-20261018-150407.md`.
 

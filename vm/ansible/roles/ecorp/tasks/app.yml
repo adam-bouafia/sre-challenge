@@ -31,7 +31,7 @@
   ansible.builtin.pip:
     requirements: "{{ ecorp_app_dir }}/requirements.txt"
     virtualenv: "{{ ecorp_venv_dir }}"
-    virtualenv_command: python3.12 -m venv
+    virtualenv_command: python3 -m venv
   become: true
   become_user: ecorp
   notify: Restart ecorp

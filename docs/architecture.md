@@ -8,14 +8,14 @@ targets. Nothing in `app/` knows whether it is running on a VM or in a pod.
 ```mermaid
 flowchart LR
     browser["Browser"] -->|"HTTPS :443"| nginx
-    subgraph vm["VM (Vagrant + Ansible, Rocky Linux 9)"]
+    subgraph vm["VM (Vagrant + Ansible, Ubuntu 24.04)"]
         nginx["nginx\nTLS termination, limit_req, security headers"]
         gunicorn["gunicorn\nsystemd unit, 1 worker, 127.0.0.1:8000"]
         sqlite["SQLite\n/var/lib/ecorp/ecorp.db"]
         nginx -->|"proxy_pass 127.0.0.1:8000"| gunicorn
         gunicorn --> sqlite
     end
-    firewalld["firewalld: allow ssh, https only"]
+    ufw["ufw: allow 22, 443 only"]
 ```
 
 ![VM architecture](diagrams/architecture-vm.png)

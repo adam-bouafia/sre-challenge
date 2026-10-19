@@ -2,11 +2,8 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "rockylinux/9"
-  # pinned the 6.0.0 box's libvirt/amd64 asset 404s on vagrantcloud.com right
-  # now (listed in the metadata, file isn't actually there - a known issue with
-  # rocky's box uploads). 5.0.0 is the last version that actually downloads.
-  config.vm.box_version = "5.0.0"
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.box_version = "202508.03.0"
   config.vm.hostname = "ecorp-vm"
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
@@ -16,14 +13,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider "libvirt" do |lv|
     lv.memory = 1024
     lv.cpus = 1
-
-    # default disk bus (virtio-blk, shows up as /dev/vda) hangs this box at
-    # boot - dracut emergency shell, "not all disks have been found". this
-    # box's initramfs only has the virtio-scsi driver, not virtio-blk.
-    # scsi here auto-picks virtio-scsi as the controller model.
-    lv.disk_bus = "scsi"
   end
-
 
   config.vm.provider "virtualbox" do |vb|
     vb.memory = 1024

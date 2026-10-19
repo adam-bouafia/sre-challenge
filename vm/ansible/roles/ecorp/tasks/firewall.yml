@@ -1,23 +1,17 @@
 ---
-- name: Enable and start firewalld
-  ansible.builtin.systemd:
-    name: firewalld
-    enabled: true
-    state: started
-
-# firewalld's default zone is already deny-by-default, no need for a separate
-# "set policy" step like on Ubuntu. We only allow the two services that should
-# be reachable.
 - name: Allow SSH
-  ansible.posix.firewalld:
-    service: ssh
-    permanent: true
-    immediate: true
-    state: enabled
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
 
 - name: Allow HTTPS
-  ansible.posix.firewalld:
-    service: https
-    permanent: true
-    immediate: true
+  community.general.ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+
+- name: Set the default deny policy and enable ufw
+  community.general.ufw:
     state: enabled
+    policy: deny

@@ -11,9 +11,6 @@
 - name: Include systemd service tasks
   ansible.builtin.import_tasks: service.yml
 
-- name: Include SELinux tasks
-  ansible.builtin.import_tasks: selinux.yml
-
 - name: Include nginx tasks
   ansible.builtin.import_tasks: nginx.yml
 

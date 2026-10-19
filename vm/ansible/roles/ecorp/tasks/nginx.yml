@@ -19,15 +19,6 @@
     creates: "{{ ecorp_tls_cert }}"
   notify: Reload nginx
 
-- name: Ensure the snippets directory exists (debian's nginx package
-    creates this by default, rhel's doesn't)
-  ansible.builtin.file:
-    path: /etc/nginx/snippets
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-
 - name: Deploy the shared reverse-proxy snippet
   ansible.builtin.template:
     src: proxy-common.conf.j2
@@ -37,19 +28,25 @@
     mode: "0644"
   notify: Reload nginx
 
-# no sites-available/sites-enabled on rhel - conf.d is the native convention,
-# already included by the stock nginx.conf's `include /etc/nginx/conf.d/*.conf;`
 - name: Deploy the E-Corp nginx site
   ansible.builtin.template:
     src: ecorp.conf.j2
-    dest: /etc/nginx/conf.d/ecorp.conf
+    dest: /etc/nginx/sites-available/ecorp.conf
     owner: root
     group: root
     mode: "0644"
   notify: Reload nginx
-- name: Remove the default nginx site, if it ships as a separate file
+
+- name: Enable the E-Corp nginx site
   ansible.builtin.file:
-    path: /etc/nginx/conf.d/default.conf
+    src: /etc/nginx/sites-available/ecorp.conf
+    dest: /etc/nginx/sites-enabled/ecorp.conf
+    state: link
+  notify: Reload nginx
+
+- name: Disable the default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
     state: absent
   notify: Reload nginx
 
