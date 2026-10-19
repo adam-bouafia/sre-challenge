@@ -1,0 +1,46 @@
+{{- if .Values.metrics.prometheusRule.enabled }}
+{{- $job := include "ecorp.fullname" . }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "ecorp.fullname" . }}
+  labels:
+    {{- include "ecorp.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: ecorp
+      rules:
+        - alert: EcorpDown
+          expr: up{job="{{ $job }}"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "E-Corp target has been down for 2 minutes"
+            description: "Prometheus has not been able to scrape {{ "{{" }} $labels.instance {{ "}}" }} for 2 minutes."
+
+        - alert: EcorpHighErrorRate
+          expr: |
+            (
+              sum(rate(flask_http_request_total{job="{{ $job }}", status=~"5.."}[5m]))
+              /
+              sum(rate(flask_http_request_total{job="{{ $job }}"}[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "E-Corp 5xx error rate above 5%"
+            description: "More than 5% of requests have returned a 5xx response over the last 5 minutes."
+
+        # for: 1m not 5m - the increase() window below is already 5m, stacking
+        # another 5m on top just delays the page for no reason
+        - alert: EcorpLoginFailureSpike
+          expr: increase(ecorp_login_attempts_total{job="{{ $job }}", outcome="failure"}[5m]) > {{ .Values.metrics.prometheusRule.loginFailureThreshold }}
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Possible brute-force attempt against /login"
+            description: "More than {{ .Values.metrics.prometheusRule.loginFailureThreshold }} failed logins in 5 minutes."
+{{- end }}
