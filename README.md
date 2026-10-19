@@ -5,6 +5,30 @@ Ansible + nginx + systemd) and Kubernetes (Helm + Prometheus/Grafana). One
 app, one config contract, two targets - see `docs/architecture.md`.
 
 
+## Architecture
+
+```mermaid
+flowchart LR
+    repo["app/ (Flask, one config contract via env vars)"]
+    repo --> vm["VM: Vagrant + Ansible\nnginx + systemd + SQLite"]
+    repo --> k8s["Kubernetes: Helm chart\nIngress + Deployment + PVC + NetworkPolicy"]
+    k8s --> mon["kube-prometheus-stack\nalerts + Grafana dashboard"]
+```
+
+Full diagrams (VM and Kubernetes, each with every component) and the
+reasoning behind every non-obvious choice: `docs/architecture.md`.
+
+
+## VM architecture
+![VM architecture](docs/diagrams/architecture-vm.png)
+
+
+
+## Kubernetes architecture
+![Kubernetes architecture](docs/diagrams/architecture-k8s.png)
+
+
+
 ## Running the Flask app directly
 
 No VM, no container, no cluster, just the flask app, for local development.
@@ -72,32 +96,6 @@ kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisione
 kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 ```
 
-## Architecture
-
-```mermaid
-flowchart LR
-    repo["app/ (Flask, one config contract via env vars)"]
-    repo --> vm["VM: Vagrant + Ansible\nnginx + systemd + SQLite"]
-    repo --> k8s["Kubernetes: Helm chart\nIngress + Deployment + PVC + NetworkPolicy"]
-    k8s --> mon["kube-prometheus-stack\nalerts + Grafana dashboard"]
-```
-
-Full diagrams (VM and Kubernetes, each with every component) and the
-reasoning behind every non-obvious choice: `docs/architecture.md`. A formal
-STRIDE-per-element threat model of the whole system - every element, every
-trust boundary, every threat with a disposition - is in
-`docs/threat-model-ecor.md`.
-
-
-## VM architecture
-![VM architecture](docs/diagrams/architecture-vm.png)
-
-
-
-## Kubernetes architecture
-![Kubernetes architecture](docs/diagrams/architecture-k8s.png)
-
-
 ## Design decisions
 
 - **SQLite, on purpose.** It forces `replicas: 1`, a `ReadWriteOnce` PVC,
@@ -120,7 +118,7 @@ trust boundary, every threat with a disposition - is in
 ## How the objectives are addressed
 
 - **Functionality:** the app works, logs in, shows the two secret cards,
-  logs out, verified live against a real running container under the
+  logs out verified live against a real running container under the
   actual production security constraints (`--read-only`, non-root), not
   just unit tests. See the "Live verification" section in
   `docs/findings.md`.
@@ -145,8 +143,9 @@ trust boundary, every threat with a disposition - is in
   non-root, read-only root filesystem, dropped capabilities, and a
   default-deny NetworkPolicy in Kubernetes; `ufw` default-deny plus a
   hardened systemd unit (`NoNewPrivileges`, `ProtectSystem=strict`,
-  `PrivateTmp`, and more) on the VM. See the threat model linked above
-  (`docs/threat-model-ecor.md`) for the full STRIDE analysis.
+  `PrivateTmp`, and more) on the VM. A formal STRIDE-per-element threat model of the whole system -
+  every element, every trust boundary, every threat with a disposition -
+  is in `docs/threat-model-ecorp-20261018-150407.md`.
 
 ## Observability
 
