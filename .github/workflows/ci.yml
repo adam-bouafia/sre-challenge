@@ -32,3 +32,11 @@ jobs:
       - name: pytest
         working-directory: app
         run: pytest --cov=ecorp --cov-report=term-missing
+
+      - name: bandit
+        working-directory: app
+        run: bandit -r ecorp -ll
+
+      - name: pip-audit
+        working-directory: app
+        run: pip-audit -r requirements.txt
