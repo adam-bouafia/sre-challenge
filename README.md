@@ -33,6 +33,16 @@ flowchart LR
 Full diagrams (VM and Kubernetes, each with every component) and the
 reasoning behind every non-obvious choice: `docs/architecture.md`.
 
+
+## VM architecture
+![VM architecture](docs/diagrams/architecture-vm.png)
+
+
+
+## Kubernetes architecture
+![Kubernetes architecture](docs/diagrams/architecture-k8s.png)
+
+
 ## Design decisions
 
 - **SQLite, on purpose.** It forces `replicas: 1`, a `ReadWriteOnce` PVC,
