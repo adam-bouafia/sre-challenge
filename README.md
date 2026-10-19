@@ -20,6 +20,18 @@ the URL.
 For the VM: `cd vm && vagrant up`, then `https://localhost:8443`
 (self-signed certificate - your browser will warn, that's expected).
 
+### Pod stuck Pending on a non-kind cluster
+
+`make kind-up` ships its own default StorageClass, so the PVC binds
+automatically there. A plain kubeadm or bare-metal cluster usually has none
+(`kubectl get storageclass` returns nothing), so the PVC and then the pod
+sit `Pending` forever. Install a StorageClass and mark it default:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
+
 ## Architecture
 
 ```mermaid
