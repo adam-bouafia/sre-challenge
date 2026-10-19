@@ -1,5 +1,0 @@
-
-# Vagrant / Ansible
-vm/.vagrant/
-*.retry
-.ansible/

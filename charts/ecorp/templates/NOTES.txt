@@ -1,0 +1,20 @@
+E-Corp has been deployed as {{ include "ecorp.fullname" . }} in namespace {{ .Release.Namespace }}.
+
+1. Get the admin password: generated on first install unless you set secrets.adminPassword / secrets.existingSecret):
+
+   kubectl get secret {{ include "ecorp.secretName" . }} -n {{ .Release.Namespace }} -o jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d; echo
+
+2. Point the ingress host at your cluster:
+
+   {{- if .Values.ingress.enabled }}
+   echo "$(kubectl get ingress {{ include "ecorp.fullname" . }} -n {{ .Release.Namespace }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}') {{ .Values.ingress.host }}" | sudo tee -a /etc/hosts
+   open https://{{ .Values.ingress.host }}
+   {{- else }}
+   Ingress is disabled (ingress.enabled=false). Use `kubectl port-forward svc/{{ include "ecorp.fullname" . }} 8000:{{ .Values.service.port }}` instead.
+   {{- end }}
+
+3. Watch it:
+
+   kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+   kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+

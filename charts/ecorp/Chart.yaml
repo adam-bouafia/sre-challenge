@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ecorp
+description: E-Corp Flask app - VM + Kubernetes SRE challenge
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
