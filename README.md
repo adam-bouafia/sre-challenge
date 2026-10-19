@@ -5,7 +5,41 @@ Ansible + nginx + systemd) and Kubernetes (Helm + Prometheus/Grafana). One
 app, one config contract, two targets - see `docs/architecture.md`.
 
 
-## Quick start
+## Running the Flask app directly
+
+No VM, no container, no cluster, just the flask app, for local development.
+
+```bash
+cd app
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
+
+export SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+export ADMIN_PASSWORD=changeme
+export SESSION_COOKIE_SECURE=false   # only for plain http on localhost
+
+flask --app ecorp init-db
+flask --app ecorp run
+```
+
+Open `http://127.0.0.1:5000`, log in with `admin` / `changeme`.
+
+Run the test suite instead: `make test` (22 tests, coverage report).
+
+## Running on the VM
+
+Vagrant + Ansible: nginx (TLS, rate limiting) in front of gunicorn, running
+as a hardened systemd unit, SQLite under `/var/lib/ecorp`.
+
+```bash
+cd vm
+vagrant up
+```
+
+Open `https://localhost:8443` (self-signed certificate - your browser will
+warn, that's expected). Tear down with `vagrant halt` or `make vm-down`.
+
+## Running on Kubernetes
 
 ```bash
 make test       # run the app's test suite (22 tests)
@@ -13,12 +47,18 @@ make kind-up    # local Kubernetes cluster, Calico, ingress-nginx
 make deploy     # build the image, load it into kind, helm install
 ```
 
-Then `kubectl get secret ecorp -o jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d`
-for the generated admin password, and see the chart's `NOTES.txt` output for
-the URL.
+Get the generated admin password:
+```bash
+kubectl get secret ecorp -n ecorp -o jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d; echo
+```
 
-For the VM: `cd vm && vagrant up`, then `https://localhost:8443`
-(self-signed certificate - your browser will warn, that's expected).
+Reach the app:
+```bash
+kubectl port-forward -n ecorp svc/ecorp 8000:8000
+```
+then open `http://127.0.0.1:8000`. (`make kind-up` also installs
+ingress-nginx, so the chart's `Ingress` works too once `ecorp.local` is
+mapped to the kind node's IP - port-forward is simpler for local testing.)
 
 ### Pod stuck Pending on a non-kind cluster
 
@@ -77,7 +117,7 @@ reasoning behind every non-obvious choice: `docs/architecture.md`.
 ## How the objectives are addressed
 
 - **Functionality:** the app works, logs in, shows the two secret cards,
-  logs out - verified live against a real running container under the
+  logs out, verified live against a real running container under the
   actual production security constraints (`--read-only`, non-root), not
   just unit tests. See the "Live verification" section in
   `docs/findings.md`.
