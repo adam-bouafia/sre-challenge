@@ -73,12 +73,13 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.sha_short }}
             ${{ env.IMAGE_NAME }}:latest
 
-      - name: Trivy scan (fail on HIGH/CRITICAL)
+      - name: Trivy scan (fail on HIGH/CRITICAL with a fix available)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.sha_short }}
           severity: HIGH,CRITICAL
           exit-code: "1"
+          ignore-unfixed: true
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -102,9 +103,7 @@ jobs:
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/ecorp-rendered.yaml
-
-      # one job, steps run top to bottom - so by the time we get here lint,
-      # tests, scans and chart validation already passed, or we never reach this
+            
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
@@ -123,11 +122,3 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.sha_short }}
             ${{ env.IMAGE_NAME }}:latest
-            
-      - name: Trivy scan (fail on HIGH/CRITICAL with a fix available)
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.sha_short }}
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-          ignore-unfixed: true
