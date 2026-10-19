@@ -1,23 +1,20 @@
 ---
-- name: Sync the app source to the VM
-  ansible.posix.synchronize:
-    src: "{{ ecorp_app_src }}/"
-    dest: "{{ ecorp_app_dir }}/"
-    delete: true
-    rsync_opts:
-      - "--exclude=.venv"
-      - "--exclude=__pycache__"
-      - "--exclude=*.pyc"
-      - "--exclude=tests"
-      - "--exclude=.pytest_cache"
-      - "--exclude=.coverage"
-      - "--exclude=instance"
-      - "--exclude=*.db"
-      - "--exclude=requirements.in"
-      - "--exclude=requirements-dev.in"
-      - "--exclude=requirements-dev.txt"
-      - "--rsync-path=sudo rsync"
+- name: Sync the app source to the VM  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: >
+      rsync --delay-updates -F --compress --delete-after --archive
+      --no-owner --no-group --no-perms --chmod=Du=rwx,Dg=rx,Do=,Fu=rw,Fg=r,Fo=
+      --rsh="ssh -i {{ ansible_ssh_private_key_file }} -o Port={{ ansible_port | default(22) }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+      --rsync-path="sudo rsync"
+      --exclude=.venv --exclude=__pycache__ --exclude=*.pyc --exclude=tests
+      --exclude=.pytest_cache --exclude=.coverage --exclude=instance --exclude=*.db
+      --exclude=requirements.in --exclude=requirements-dev.in --exclude=requirements-dev.txt
+      --out-format="%i %n%L"
+      {{ ecorp_app_src }}/ {{ ansible_user }}@{{ ansible_host }}:{{ ecorp_app_dir }}/
+  delegate_to: localhost
   become: false
+  register: ecorp_rsync
+  changed_when: ecorp_rsync.stdout | trim != ""
   notify: Restart ecorp
 
 - name: Fix ownership after sync (rsync writes as root via sudo)
