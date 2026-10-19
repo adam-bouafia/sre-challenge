@@ -1,4 +1,4 @@
-.PHONY: test build vm-up vm-down kind-up deploy monitoring clean
+.PHONY: test build vm-up vm-down kind-up deploy deploy-ghcr monitoring ci-local clean
 
 CONTAINER_ENGINE ?= $(shell command -v podman 2>/dev/null || echo docker)
 IMAGE_REPO ?= ecorp
@@ -8,6 +8,8 @@ KIND_CLUSTER ?= ecorp
 NAMESPACE ?= ecorp
 INGRESS_TAG ?= controller-v1.11.3
 CALICO_VERSION ?= v3.28.0
+GHCR_IMAGE_REPO ?= ghcr.io/adam-bouafia/sre-challenge
+GHCR_IMAGE_TAG  ?= latest
 
 test:
 	cd app && \
@@ -47,6 +49,18 @@ deploy: build
 		--set image.tag=$(IMAGE_TAG) \
 		--set image.pullPolicy=IfNotPresent
 
+# for an existing cluster (kubeadm, bare metal - anything that isn't kind):
+# no local build or image load, pulls the image CI already pushed to GHCR.
+# needs a StorageClass present first (see README's "Pod stuck Pending" note)
+# and, if the package is private, `kubectl create secret docker-registry`
+# or a node-level GHCR login so the pull actually succeeds.
+deploy-ghcr:
+	helm upgrade --install ecorp charts/ecorp \
+		--namespace $(NAMESPACE) --create-namespace \
+		--set image.repository=$(GHCR_IMAGE_REPO) \
+		--set image.tag=$(GHCR_IMAGE_TAG) \
+		--set image.pullPolicy=Always
+
 # goes into the "monitoring" namespace. on a shared cluster , check what is already there first
 monitoring:
 	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -54,6 +68,22 @@ monitoring:
 	helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
 		--namespace monitoring --create-namespace \
 		-f k8s/monitoring-values.yaml
+
+
+# runs the CI workflow locally with act (github.com/nektos/act), against
+# the rootless podman socket - no push to GitHub needed to see it work.
+# `make ci-local` alone runs lint+test+security (fast, no docker-in-docker).
+# JOB=docker-build (or image-scan/helm-validate) runs a later stage; those
+# need --privileged for nested docker and aren't run by default.
+ci-local:
+	systemctl --user start podman.socket
+	DOCKER_HOST=unix:///run/user/$$(id -u)/podman/podman.sock \
+		act -P ubuntu-latest=catthehacker/ubuntu:act-latest \
+		$(if $(JOB),-j $(JOB),-j lint && \
+		DOCKER_HOST=unix:///run/user/$$(id -u)/podman/podman.sock \
+		act -P ubuntu-latest=catthehacker/ubuntu:act-latest -j test && \
+		DOCKER_HOST=unix:///run/user/$$(id -u)/podman/podman.sock \
+		act -P ubuntu-latest=catthehacker/ubuntu:act-latest -j security)
 
 clean:
 	-helm uninstall ecorp --namespace $(NAMESPACE)

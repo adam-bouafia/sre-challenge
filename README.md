@@ -83,7 +83,10 @@ flowchart LR
 ```
 
 Full diagrams (VM and Kubernetes, each with every component) and the
-reasoning behind every non-obvious choice: `docs/architecture.md`.
+reasoning behind every non-obvious choice: `docs/architecture.md`. A formal
+STRIDE-per-element threat model of the whole system - every element, every
+trust boundary, every threat with a disposition - is in
+`docs/threat-model-ecor.md`.
 
 
 ## VM architecture
@@ -142,9 +145,8 @@ reasoning behind every non-obvious choice: `docs/architecture.md`.
   non-root, read-only root filesystem, dropped capabilities, and a
   default-deny NetworkPolicy in Kubernetes; `ufw` default-deny plus a
   hardened systemd unit (`NoNewPrivileges`, `ProtectSystem=strict`,
-  `PrivateTmp`, and more) on the VM. A formal STRIDE-per-element threat model of the whole system -
-  every element, every trust boundary, every threat with a disposition -
-  is in `docs/threat-model-ecorp-20261018-150407.md`.
+  `PrivateTmp`, and more) on the VM. See the threat model linked above
+  (`docs/threat-model-ecor.md`) for the full STRIDE analysis.
 
 ## Observability
 

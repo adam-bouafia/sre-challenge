@@ -101,7 +101,7 @@ boundary "Monitoring" { 2.1 }
 > and export a PNG. Flows that cross a trust boundary (every `User -> 1.1`
 > flow, and `1.1 -> 1.2`) are the highest-priority attack surface.
 
-![E-Corp threat model data-flow diagram](screenshots/threat-model-ecorp.png)
+![E-Corp threat model data-flow diagram](diagrams/threat-model-ecorp.png)
 
 *(Rendered with Mermaid rather than Threat·Studio for this copy - same DFD,
 same trust boundaries and flows as the `threatmodel` source above.)*
