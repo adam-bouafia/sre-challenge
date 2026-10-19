@@ -74,7 +74,7 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
 
       - name: Trivy scan (fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:${{ steps.tags.outputs.sha_short }}
           severity: HIGH,CRITICAL
@@ -103,8 +103,8 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/ecorp-rendered.yaml
 
-      # one job, steps run top to bottom, so by the time we get here lint,
-      # tests, scans and chart validation already passed, or we never reach this point, so we can safely push the image to GHCR
+      # one job, steps run top to bottom - so by the time we get here lint,
+      # tests, scans and chart validation already passed, or we never reach this
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
