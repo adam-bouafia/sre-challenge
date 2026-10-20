@@ -11,6 +11,16 @@ CALICO_VERSION ?= v3.28.0
 GHCR_IMAGE_REPO ?= ghcr.io/adam-bouafia/sre-challenge
 GHCR_IMAGE_TAG  ?= latest
 
+# kind calls `docker` directly, it has no idea CONTAINER_ENGINE exists. on a
+# machine with no real dockerd (rootless podman only, like this one), kind
+# needs to be told explicitly to use podman instead, and podman's socket has
+# to actually be running first.
+ifeq ($(notdir $(CONTAINER_ENGINE)),podman)
+KIND_ENV := KIND_EXPERIMENTAL_PROVIDER=podman DOCKER_HOST=unix:///run/user/$(shell id -u)/podman/podman.sock
+else
+KIND_ENV :=
+endif
+
 test:
 	cd app && \
 	. .venv/bin/activate 2>/dev/null || python3 -m venv .venv && . .venv/bin/activate; \
@@ -30,9 +40,14 @@ vm-down:
 	cd vm && vagrant halt
 
 # local kind cluster for testers. kindnetd doesnt enforce NetworkPolicy so
-# we turn it off and install calico, else the chart's NetworkPolicy is a no-op
+# we turn it off and install calico, else the chart's NetworkPolicy is a no-op.
+# needs the VM down first: kind-config.yaml and the VM both claim host port
+# 8443.
 kind-up:
-	kind create cluster --name $(KIND_CLUSTER) --config k8s/kind-config.yaml
+ifeq ($(notdir $(CONTAINER_ENGINE)),podman)
+	systemctl --user start podman.socket
+endif
+	$(KIND_ENV) kind create cluster --name $(KIND_CLUSTER) --config k8s/kind-config.yaml
 	kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/$(CALICO_VERSION)/manifests/calico.yaml
 	kubectl wait --for=condition=Ready nodes --all --timeout=180s
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/$(INGRESS_TAG)/deploy/static/provider/kind/deploy.yaml
@@ -42,7 +57,7 @@ kind-up:
 # PVC wont bind without a StorageClass. if the cluster has none already, we install the local-path-provisioner:
 #   kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
 deploy: build
-	kind load docker-image $(IMAGE) --name $(KIND_CLUSTER) 2>/dev/null || true
+	$(KIND_ENV) kind load docker-image $(IMAGE) --name $(KIND_CLUSTER) 2>/dev/null || true
 	helm upgrade --install ecorp charts/ecorp \
 		--namespace $(NAMESPACE) --create-namespace \
 		--set image.repository=$(IMAGE_REPO) \
@@ -87,5 +102,5 @@ ci-local:
 
 clean:
 	-helm uninstall ecorp --namespace $(NAMESPACE)
-	-kind delete cluster --name $(KIND_CLUSTER)
+	-$(KIND_ENV) kind delete cluster --name $(KIND_CLUSTER)
 	-cd vm && vagrant destroy -f
