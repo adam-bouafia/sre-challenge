@@ -61,6 +61,11 @@ vagrant up
 Open `https://localhost:8443` (self-signed certificate - your browser will
 warn, that's expected). Tear down with `vagrant halt` or `make vm-down`.
 
+Get the generated admin password:
+```bash
+vagrant ssh -c "sudo cat /etc/ecorp/ecorp.env" | grep ADMIN_PASSWORD
+```
+
 ## Running on Kubernetes
 
 ```bash
@@ -74,10 +79,11 @@ Get the generated admin password:
 kubectl get secret ecorp -n ecorp -o jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d; echo
 ```
 
-Reach the app:
+Port-forward the service to localhost:
 ```bash
 kubectl port-forward -n ecorp svc/ecorp 8000:8000
 ```
+
 then open `http://127.0.0.1:8000`. (`make kind-up` also installs
 ingress-nginx, so the chart's `Ingress` works too once `ecorp.local` is
 mapped to the kind node's IP - port-forward is simpler for local testing.)
@@ -94,16 +100,36 @@ kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisione
 kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 ```
 
+### Skipping the local build
+
+CI pushes the image to GHCR on every merge to `main`, and the package is
+public, no login needed, confirmed with a plain anonymous pull:
+
+```bash
+docker pull ghcr.io/adam-bouafia/sre-challenge:latest
+```
+
+That alone isn't Kubernetes, just the container, you still need a cluster
+and the Helm chart to actually deploy it. On any cluster that already has a
+StorageClass (not just kind), this skips `make build` entirely:
+
+```bash
+make deploy-ghcr
+```
+
+which is just `helm upgrade --install` pointed at the GHCR image instead of
+a locally built one (see the `Makefile` for the exact command).
+
 ## Design decisions
 
 - **SQLite, on purpose.** It forces `replicas: 1`, a `ReadWriteOnce` PVC,
   and `strategy: Recreate` - all hardcoded in the chart, not values, so the
   constraint can't be silently violated. The Postgres path to
-  `replicas > 1` is in `docs/architecture.md`.
+  `replicas > 1` is in Architecture (docs/architecture.md).
 - **gunicorn runs 1 worker**, not a `cpu_count()` formula: it matches the
   actual CPU budget on both targets (1 vCPU VM, 250m-limit pod), and it's
   what makes Flask-Limiter's in-memory rate limit a real global counter
-  instead of one counter per worker. See `docs/architecture.md` for the
+  instead of one counter per worker. See Architecture (docs/architecture.md) for the
   full reasoning - this surprised me when I actually load-tested it rather
   than just reading the code.
 - **Helm, not raw manifests**, for per-environment configurability
@@ -119,7 +145,7 @@ kubectl patch storageclass local-path -p '{"metadata":{"annotations":{"storagecl
   logs out verified live against a real running container under the
   actual production security constraints (`--read-only`, non-root), not
   just unit tests. See the "Live verification" section in
-  `docs/findings.md`.
+  Architecture (docs/architecture.md) for the full reasoning.
 - **Simplicity:** one Flask app, one Docker image, no service mesh, no
   GitOps controller, no second database. Every added moving part (CSRF,
   rate limiting, structured logging) is there because a specific finding
@@ -172,4 +198,4 @@ backend once there's more than one worker, External Secrets or Vault
 instead of a chart-managed Secret, cert-manager for Ingress TLS, GitOps
 (Flux or Argo CD), image signing (cosign) and an SBOM in CI, and
 path-level `/metrics` isolation in Kubernetes to match what nginx already
-does on the VM. Full reasoning for each: `docs/architecture.md`.
+does on the VM. Full reasoning for each: Architecture (docs/architecture.md).
