@@ -1,8 +1,7 @@
 # E-Corp SRE Challenge
 
-A Flask login app, fixed and deployed two ways: a hardened VM (Vagrant +
-Ansible + nginx + systemd) and Kubernetes (Helm + Prometheus/Grafana). One
-app, one config contract, two targets - see `docs/architecture.md`.
+A Flask login app, fixed and deployed two ways: a hardened VM (Vagrant + Ansible + nginx + systemd) and Kubernetes (Helm + Prometheus/Grafana). 
+One app, one config contract, two targets: see [Architecture Documentation](docs/architecture.md).
 
 
 ## Architecture
@@ -15,8 +14,7 @@ flowchart LR
     k8s --> mon["kube-prometheus-stack\nalerts + Grafana dashboard"]
 ```
 
-Full diagrams (VM and Kubernetes, each with every component) and the
-reasoning behind every non-obvious choice: `docs/architecture.md`.
+Full diagrams (VM and Kubernetes, each with every component) and [the reasoning behind every non-obvious choice](docs/architecture.md).
 
 
 ## VM architecture
